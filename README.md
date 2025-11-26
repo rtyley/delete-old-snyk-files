@@ -4,6 +4,8 @@ This small program deletes old Snyk files - specifically, `.github/workflows/sny
 
 ## Creating the GitHub App
 
+The program needs to run as a GitHub App, rather than a GitHub user.
+
 ### GitHub App for a single user account
 
 GitHub defines a [url-format](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-using-url-parameters) for helping create GitHub Apps wih specified permissions.
