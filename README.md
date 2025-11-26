@@ -1,6 +1,6 @@
 # Delete old Snyk files
 
-This small program deletes old Snyk files - specifically, `.github/workflows/snyk.yml`
+This small program deletes old Snyk files - specifically, `.github/workflows/snyk.yml`.
 
 ## Creating the GitHub App
 
