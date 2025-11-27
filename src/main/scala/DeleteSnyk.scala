@@ -3,22 +3,22 @@ import cats.effect.{ExitCode, IO, Resource, ResourceApp}
 import cats.syntax.all.*
 import com.madgag.github.apps.GitHubAppJWTs.fromEnvVars
 import com.madgag.scalagithub.GitHub
-import com.madgag.scalagithub.model.RepoId
+import com.madgag.scalagithub.model.*
+import com.madgag.scalagithub.model.Repo.PullRequests.SingleCommitAction.deleteFile
 
+import java.io.File
 import java.nio.file.{Files, Path}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
 import scala.jdk.StreamConverters.*
 
 object DeleteSnyk extends ResourceApp {
 
   private val snykFilePath = ".github/workflows/snyk.yml"
 
-  private val commitMessage =
-    """Delete obsolete Snyk workflow `.github/workflows/snyk.yml`
-      |
-      |This workflow is now obsolete, see https://github.com/guardian/.github/pull/96
-      |""".stripMargin
+  private val prText = PullRequest.Text(
+    title = s"Delete obsolete Snyk workflow `$snykFilePath`",
+    body = Files.readString(new File(getClass.getResource("/pr-description.md").toURI).toPath)
+  )
 
   def run(args: List[String]): Resource[IO, ExitCode] = for {
     gitHubFactory <- GitHub.Factory()
@@ -33,11 +33,9 @@ object DeleteSnyk extends ResourceApp {
   } yield ()
 
   def deleteSnykFile(repoId: RepoId)(using gitHub: GitHub): IO[Unit] = for {
-    contents <- gitHub.getRepo(repoId).flatMap(_.contentsFile.get(snykFilePath))
-    _ <- IO.println(s"Will next delete: ${contents.html_url}")
-    _ <- IO.sleep(5.minutes) // reduces the rate of any resulting RiffRaff deploys
-    deletionCommit <- contents.delete(commitMessage)
-    _ <- IO.println(deletionCommit.result.commit.html_url)
+    repo <- gitHub.getRepo(repoId)
+    pr <- repo.pullRequests.create(prText, labels = Set("maintenance"), branch = "delete-old-snyk-file")(deleteFile(snykFilePath))
+    _ <- IO.println(pr.html_url)
   } yield ()
 
 }
