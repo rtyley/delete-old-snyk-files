@@ -28,6 +28,7 @@ object DeleteSnyk extends ResourceApp {
   def deleteSnykFilesInAllReposListedIn(repoIdsFile: Path, gitHubFactory: GitHub.Factory): IO[Unit] = for {
     repoIds: Seq[RepoId] <- IO.blocking(Files.lines(repoIdsFile).toScala(Seq).map(RepoId.from))
     access <- gitHubFactory.accessSoleAppInstallation(fromEnvVars(prefix = "DELETE_SNYK"))
+    _ <- IO.println(access.accountAccess.installation.account.atLogin)
     given GitHub = access.gitHub
     _ <- repoIds.traverse(deleteSnykFile)
   } yield ()
